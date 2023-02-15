@@ -15,7 +15,6 @@ type Config = AccessoryConfig & {
 export class InioAccessoryPlugin implements AccessoryPlugin {
   private readonly log: Logging;
   private readonly config: Config;
-  private switchOn = false;
   private api: API;
 
   private readonly lightBulb: Service;
@@ -111,7 +110,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
           });
       }
     } catch (e) {
-      this.log.error(e);
+      this.log.error(`${e}`);
     }
   }
 
@@ -136,7 +135,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
         },
       });
     } catch (e) {
-      this.log.error(e);
+      this.log.error(`${e}`);
     }
   }
 
@@ -175,7 +174,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
           });
       }
     } catch (e) {
-      this.log.error(e);
+      this.log.error(`${e}`);
     }
   }
 
