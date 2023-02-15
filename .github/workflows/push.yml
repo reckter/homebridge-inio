@@ -80,7 +80,7 @@ jobs:
 
   publish-gpr:
     name: Publish Version
-    needs: [test, lint]
+    needs: [build, lint]
     runs-on: ubuntu-latest
     if: "contains(github.ref, 'main') && !contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
