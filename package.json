@@ -4,10 +4,7 @@
   "version": "0.1.0",
   "description": "A plugin for inio light lamps",
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/reckter/homebridge-inio.git"
-  },
+  "repository": "reckter/homebridge-inio",
   "bugs": {
     "url": "https://github.com/reckter/homebridge-inio/issues"
   },
@@ -47,7 +44,7 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
-  "author": "Hannes <hannes@guedelhoefer.de>",
+  "author": "Hannes Güdelhöfer<hannes@guedelhoefer.de>",
   "auto": {
     "plugins": [
       "npm",
