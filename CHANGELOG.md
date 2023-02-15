@@ -1,3 +1,15 @@
+# v0.6.4 (Wed Feb 15 2023)
+
+#### ⚠️ Pushed to `main`
+
+- Go back to github token ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v0.6.0 (Thu Feb 16 2023)
 
 :tada: This release contains work from a new contributor! :tada:
