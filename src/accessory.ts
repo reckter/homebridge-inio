@@ -67,17 +67,6 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
     try {
 
       if (value) {
-        if (mode === 'CONNECTED') {
-          return;
-        }
-        if (mode === 'OFF') {
-          await axios(
-            this.apiUrl('/api/interface/btn_short_connect'),
-            {
-              method: 'PUT',
-            });
-        }
-
         switch (mode) {
           case 'CONNECTED':
             return;
@@ -110,7 +99,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
           });
       }
     } catch (e) {
-      this.log.error(`${e}`);
+      this.log.error('got an error', e);
     }
   }
 
@@ -135,7 +124,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
         },
       });
     } catch (e) {
-      this.log.error(`${e}`);
+      this.log.error('got an error', e);
     }
   }
 
@@ -174,7 +163,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
           });
       }
     } catch (e) {
-      this.log.error(`${e}`);
+      this.log.error('got an error', e);
     }
   }
 
