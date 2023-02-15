@@ -27,6 +27,8 @@
     "homebridge-plugin"
   ],
   "devDependencies": {
+    "@auto-it/all-contributors": "^10.42.0",
+    "@auto-it/first-time-contributor": "^10.42.0",
     "@types/node": "^16.10.9",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
@@ -44,5 +46,13 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
+  },
+  "author": "Hannes <hannes@guedelhoefer.de>",
+  "auto": {
+    "plugins": [
+      "npm",
+      "all-contributors",
+      "first-time-contributor"
+    ]
   }
 }
