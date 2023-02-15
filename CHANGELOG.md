@@ -1,3 +1,15 @@
+# v0.6.5 (Wed Feb 15 2023)
+
+#### 🐛 Bug Fix
+
+- Fix switch not switching on correctly [#3](https://github.com/reckter/homebridge-inio/pull/3) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v0.6.4 (Wed Feb 15 2023)
 
 #### ⚠️ Pushed to `main`
