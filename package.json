@@ -50,6 +50,10 @@
       "npm",
       "all-contributors",
       "first-time-contributor"
-    ]
+    ],
+    "owner": "reckter",
+    "repo": "homebridge-inio",
+    "name": "Hannes Güdelhöfer",
+    "email": "hannes@guedelhoefer.de"
   }
 }
