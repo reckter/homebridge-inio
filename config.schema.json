@@ -1,7 +1,7 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
-  "pluginType": "platform",
-  "singular": true,
+  "pluginAlias": "inioLight",
+  "pluginType": "accessory",
+  "singular": false,
   "schema": {
     "type": "object",
     "properties": {
@@ -9,7 +9,14 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "InioLight"
+      },
+      "url": {
+        "title": "URL",
+        "type": "string",
+        "required": true,
+        "placeholder": "http://192.168.1.125",
+        "description": "The URL of the Inio device"
       }
     }
   }
