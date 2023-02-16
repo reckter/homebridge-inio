@@ -1,3 +1,15 @@
+# v0.7.0 (Thu Feb 16 2023)
+
+#### 🚀 Enhancement
+
+- Add color Temperature [#4](https://github.com/reckter/homebridge-inio/pull/4) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v0.6.5 (Wed Feb 15 2023)
 
 #### 🐛 Bug Fix
