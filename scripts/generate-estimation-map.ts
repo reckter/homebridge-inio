@@ -2,6 +2,10 @@ import axios from 'axios';
 
 import fs from 'fs';
 
+
+// Change if you want to use a different lamp
+const LAMP_URL = "http://192.168.161.151"
+
 type LampPowers = {
     cold: number,
     warm: number
@@ -13,11 +17,11 @@ type LampTemperature = {
 }
 
 async function getLampPower(): Promise<LampPowers> {
-    let response = (await axios("http://192.168.161.151/api/app/pwm_duty_get")).data
+    let response = (await axios(LAMP_URL + "/api/app/pwm_duty_get")).data
     let settled = false
     while (!settled) {
         await sleep(10)
-        const current = (await axios("http://192.168.161.151/api/app/pwm_duty_get")).data
+        const current = (await axios(LAMP_URL + "/api/app/pwm_duty_get")).data
         settled = current.cold === response.cold && current.warm === response.warm
         response = current
 
@@ -26,7 +30,7 @@ async function getLampPower(): Promise<LampPowers> {
 }
 
 async function setLampBrightness(to: LampTemperature): Promise<void> {
-    await axios("http://192.168.161.151/api/app/light_color", {
+    await axios(LAMP_URL + "/api/app/light_color", {
         method: 'POST',
         data: to
     })
