@@ -7,10 +7,39 @@ import type {
   Service,
 } from 'homebridge';
 import axios from 'axios';
+import fs from 'fs';
 
 type Config = AccessoryConfig & {
     url: string;
 };
+
+type LampPowers = {
+    cold: number;
+    warm: number;
+};
+
+type LampTemperature = {
+    brightness: number;
+    kelvin: number;
+};
+
+type EstimationItem = {
+    power: LampPowers;
+    temperature: LampTemperature;
+};
+
+import packedArray from './data-packed.json';
+
+const estimationMap: Array<EstimationItem> = packedArray.map((it) => ({
+  temperature: {
+    brightness: it[0],
+    kelvin: it[1],
+  },
+  power: {
+    warm: it[2],
+    cold: it[3],
+  },
+}));
 
 export class InioAccessoryPlugin implements AccessoryPlugin {
   private readonly log: Logging;
@@ -49,6 +78,10 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
     this.lightBulb.getCharacteristic(this.api.hap.Characteristic.Brightness)
       .onGet(this.handleBrightnesGet.bind(this))
       .onSet(this.handleBrightnesSet.bind(this));
+
+    this.lightBulb.getCharacteristic(this.api.hap.Characteristic.ColorTemperature)
+      .onGet(this.handleColorTemperatureGet.bind(this))
+      .onSet(this.handleColorTemperatureSet.bind(this));
   }
 
   apiUrl(suffix: string) {
@@ -56,7 +89,6 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
   }
 
   async handleModeGet(): Promise<CharacteristicValue> {
-    this.log.debug('Getting current state of Inio Light switch');
     const response = await axios(this.apiUrl('/api/app/status'));
     return response.data.mode === 'CONNECTED';
   }
@@ -103,24 +135,111 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
     }
   }
 
+  /**
+     * Loads a packed version of the estimation map
+     * This was created using srcipt/create-estimation-map.ts
+     * Basically this is a huge rainbow table and we just search for the best match
+     */
+  async loadResultPacked(): Promise<Array<EstimationItem>> {
+    const packed: Array<Array<number>> = JSON.parse(fs.readFileSync('data-packed.json', 'utf-8'));
+    return packed.map(it => ({
+      temperature: {
+        brightness: it[0],
+        kelvin: it[1],
+      },
+      power: {
+        warm: it[2],
+        cold: it[3],
+      },
+    }));
+  }
+
+  /**
+     * euclidian distance
+     */
+  distance(a: LampPowers, b: LampPowers): number {
+    const coldDistance = Math.abs(a.cold - b.cold);
+    const warmDistance = Math.abs(a.warm - b.warm);
+    return coldDistance * coldDistance + warmDistance * warmDistance;
+  }
+
+  /**
+     * Gets the current lamp power
+     * This is a bit tricky because the lamp takes some time to settle
+     * So we wait until the values are stable
+     */
+  async getLampPower(): Promise<LampPowers> {
+    let response = (await axios(this.apiUrl('/api/app/pwm_duty_get'))).data;
+    let settled = false;
+    while (!settled) {
+      await sleep(10);
+      const current = (await axios(this.apiUrl('/api/app/pwm_duty_get'))).data;
+      settled = current.cold === response.cold && current.warm === response.warm;
+      response = current;
+
+    }
+    return response;
+  }
+
+  /**
+     * Gets the estimated temperature based on the current power
+     */
+  getEstimate(power: LampPowers): LampTemperature {
+    let best = estimationMap[0];
+    let bestDistance = this.distance(power, best.power);
+
+    estimationMap.forEach(it => {
+      if (this.distance(it.power, power) < bestDistance) {
+        best = it;
+        bestDistance = this.distance(it.power, power);
+      }
+    });
+
+    return best.temperature;
+  }
+
+  async getEstimatedTemperature(): Promise<LampTemperature> {
+    const power = await this.getLampPower();
+    return this.getEstimate(power);
+  }
+
   async handleBrightnesGet(): Promise<CharacteristicValue> {
-    const response = await axios(this.apiUrl('/api/interface/slider_position'));
-    return Math.floor(response.data.slider_position / 255 * 100);
+    const res = (await this.getEstimatedTemperature()).brightness;
+    return res;
   }
 
   async handleBrightnesSet(value: CharacteristicValue) {
-    if (!await this.handleOnGet()) {
-      await this.handleOnSet(true);
-    }
-    if (value === 0) {
-      return await this.handleOnSet(false);
-    }
-
     try {
-      await axios(this.apiUrl('/api/interface/slider'), {
+      const temperature = await this.getEstimatedTemperature();
+      await axios(this.apiUrl('/api/app/light_color'), {
         method: 'POST',
         data: {
-          'position': Math.floor((value as number / 100) * 255),
+          ...temperature,
+          brightness: value,
+        },
+      });
+    } catch (e) {
+      this.log.error('got an error', e);
+    }
+  }
+
+  async handleColorTemperatureGet(): Promise<CharacteristicValue> {
+    const res = (await this.getEstimatedTemperature()).kelvin;
+    // kelvin to mirek
+    return 1_000_000 / res;
+  }
+
+  async handleColorTemperatureSet(value: CharacteristicValue) {
+    try {
+      const temperature = await this.getEstimatedTemperature();
+      // We need to clamp the value because the lamp does not support all values
+      const kelvin = Math.floor(1_000_000 / (value as number));
+      const clamped = Math.max(2700, Math.min(6500, kelvin));
+      await axios(this.apiUrl('/api/app/light_color'), {
+        method: 'POST',
+        data: {
+          ...temperature,
+          kelvin: clamped,
         },
       });
     } catch (e) {
@@ -129,7 +248,6 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
   }
 
   async handleOnGet(): Promise<CharacteristicValue> {
-    this.log.debug('Getting current state of Inio Light');
     const response = await axios(this.apiUrl('/api/app/status'));
     return response.data.mode !== 'OFF';
   }
@@ -174,5 +292,9 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
       this.modeSwitch,
     ];
   }
+}
 
+
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

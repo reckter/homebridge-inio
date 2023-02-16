@@ -10,7 +10,8 @@
     "sourceType": "module"
   },
   "ignorePatterns": [
-    "dist"
+    "dist",
+    "data-packed.json"
   ],
   "rules": {
     "quotes": ["warn", "single"],
