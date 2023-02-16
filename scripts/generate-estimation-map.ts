@@ -48,7 +48,7 @@ async function loadResult(): Promise<Array<Item>> {
 }
 
 async function loadResultPacked(): Promise<Array<Item>> {
-    const packed: Array<Array<number>> = JSON.parse(fs.readFileSync('data-packed.json', "utf-8"))
+    const packed: Array<Array<number>> = JSON.parse(fs.readFileSync('src/data-packed.json', "utf-8"))
     return packed.map(it => ({
         temperature: {
             brightness: it[0],
@@ -158,7 +158,7 @@ async function writeCompact(result: Array<Item>){
         .map(it => [it.temperature.brightness, it.temperature.kelvin, it.power.warm, it.power.cold] )
         .map(it => it.map(it => parseFloat(it.toFixed(5))))
 
-    await fs.promises.writeFile('data-packed.json', JSON.stringify(packed))
+    await fs.promises.writeFile('src/data-packed.json', JSON.stringify(packed))
 }
 /**
  * Compacts the
@@ -180,7 +180,7 @@ async function dedupe() {
         .map(it => it.map(it => parseFloat(it.toFixed(5))))
 
     console.log("saving")
-    fs.writeFileSync('data-packed.json', JSON.stringify(packed))
+    fs.writeFileSync('src/data-packed.json', JSON.stringify(packed))
 }
 
 mapAll().then(dedupe)

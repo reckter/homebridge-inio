@@ -28,6 +28,19 @@ type EstimationItem = {
     temperature: LampTemperature;
 };
 
+import packedArray from './data-packed.json';
+
+const estimationMap: Array<EstimationItem> = packedArray.map((it) => ({
+  temperature: {
+    brightness: it[0],
+    kelvin: it[1],
+  },
+  power: {
+    warm: it[2],
+    cold: it[3],
+  },
+}));
+
 export class InioAccessoryPlugin implements AccessoryPlugin {
   private readonly log: Logging;
   private readonly config: Config;
@@ -36,7 +49,6 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
   private readonly lightBulb: Service;
   private readonly informationService: Service;
   private readonly modeSwitch: Service;
-  private estimationMap: Array<EstimationItem>;
 
   constructor(log: Logging, config: AccessoryConfig, api: API) {
     this.log = log;
@@ -70,11 +82,6 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
     this.lightBulb.getCharacteristic(this.api.hap.Characteristic.ColorTemperature)
       .onGet(this.handleColorTemperatureGet.bind(this))
       .onSet(this.handleColorTemperatureSet.bind(this));
-
-    this.estimationMap = [];
-    this.loadResultPacked().then(it => {
-      this.estimationMap = it;
-    });
   }
 
   apiUrl(suffix: string) {
@@ -129,10 +136,10 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
   }
 
   /**
-   * Loads a packed version of the estimation map
-   * This was created using srcipt/create-estimation-map.ts
-   * Basically this is a huge rainbow table and we just search for the best match
-   */
+     * Loads a packed version of the estimation map
+     * This was created using srcipt/create-estimation-map.ts
+     * Basically this is a huge rainbow table and we just search for the best match
+     */
   async loadResultPacked(): Promise<Array<EstimationItem>> {
     const packed: Array<Array<number>> = JSON.parse(fs.readFileSync('data-packed.json', 'utf-8'));
     return packed.map(it => ({
@@ -148,8 +155,8 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
   }
 
   /**
-   * euclidian distance
-   */
+     * euclidian distance
+     */
   distance(a: LampPowers, b: LampPowers): number {
     const coldDistance = Math.abs(a.cold - b.cold);
     const warmDistance = Math.abs(a.warm - b.warm);
@@ -157,10 +164,10 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
   }
 
   /**
-   * Gets the current lamp power
-   * This is a bit tricky because the lamp takes some time to settle
-   * So we wait until the values are stable
-   */
+     * Gets the current lamp power
+     * This is a bit tricky because the lamp takes some time to settle
+     * So we wait until the values are stable
+     */
   async getLampPower(): Promise<LampPowers> {
     let response = (await axios(this.apiUrl('/api/app/pwm_duty_get'))).data;
     let settled = false;
@@ -175,13 +182,13 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
   }
 
   /**
-   * Gets the estimated temperature based on the current power
-   */
+     * Gets the estimated temperature based on the current power
+     */
   getEstimate(power: LampPowers): LampTemperature {
-    let best = this.estimationMap[0];
+    let best = estimationMap[0];
     let bestDistance = this.distance(power, best.power);
 
-    this.estimationMap.forEach(it => {
+    estimationMap.forEach(it => {
       if (this.distance(it.power, power) < bestDistance) {
         best = it;
         bestDistance = this.distance(it.power, power);
