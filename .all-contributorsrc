@@ -1,0 +1,28 @@
+{
+  "projectName": "homebridge-inio",
+  "projectOwner": "reckter",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "reckter",
+      "name": "Hannes Güdelhöfer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1771450?v=4",
+      "profile": "https://github.com/reckter",
+      "contributions": [
+        "code",
+        "ideas",
+        "infra",
+        "maintenance"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": false
+}
