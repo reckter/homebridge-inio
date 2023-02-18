@@ -1,7 +1,7 @@
 {
   "displayName": "Inio",
   "name": "homebridge-inio",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "A plugin for inio light lamps",
   "license": "Apache-2.0",
   "repository": "reckter/homebridge-inio",
