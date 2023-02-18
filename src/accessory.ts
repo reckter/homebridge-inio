@@ -7,7 +7,6 @@ import type {
   Service,
 } from 'homebridge';
 import axios from 'axios';
-import fs from 'fs';
 
 type Config = AccessoryConfig & {
     url: string;
@@ -26,6 +25,14 @@ type LampTemperature = {
 type EstimationItem = {
     power: LampPowers;
     temperature: LampTemperature;
+};
+
+type Mode = 'OFF' | 'CONNECTED' | 'STATIC';
+type Addon = 'NONE' | 'BOOST' | 'RELAX' | 'SCENARIO';
+
+type Status = {
+    mode: Mode;
+    addon: Addon;
 };
 
 import packedArray from './data-packed.json';
@@ -64,9 +71,14 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
     // expose a switch to turn on/off the "connected" mode
     this.modeSwitch = new this.api.hap.Service.Switch('Inio Light Mode');
 
+    // this.modeSwitch.setCharacteristic(this.api.hap.Characteristic.Name, 'Inio Light Mode');
+    // this.modeSwitch.setCharacteristic(this.api.hap.Characteristic.Model, 'Inio Light Mode');
+
     this.modeSwitch.getCharacteristic(this.api.hap.Characteristic.On)
+    // .setProps({ description: "Turn on/off the 'connected' mode"})
       .onGet(this.handleModeGet.bind(this))
       .onSet(this.handleModeSet.bind(this));
+
 
     // expose a lightbulb with brightness
     this.lightBulb = new this.api.hap.Service.Lightbulb('Inio Light');
@@ -80,6 +92,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
       .onSet(this.handleBrightnesSet.bind(this));
 
     this.lightBulb.getCharacteristic(this.api.hap.Characteristic.ColorTemperature)
+      .setProps({minValue: 153, maxValue: 370})
       .onGet(this.handleColorTemperatureGet.bind(this))
       .onSet(this.handleColorTemperatureSet.bind(this));
   }
@@ -88,70 +101,58 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
     return this.config.url.replace(/\/$/, '') + suffix;
   }
 
-  async handleModeGet(): Promise<CharacteristicValue> {
+
+  async pushUpdate() {
+    // this.lightBulb.updateCharacteristic(this.api.hap.Characteristic.On, await this.handleOnGet());
+    // this.lightBulb.updateCharacteristic(this.api.hap.Characteristic.Brightness, await this.handleBrightnesGet());
+    // this.lightBulb.updateCharacteristic(this.api.hap.Characteristic.ColorTemperature, await this.handleColorTemperatureGet());
+    //
+    // this.modeSwitch.updateCharacteristic(this.api.hap.Characteristic.On, await this.handleModeGet());
+  }
+
+  async getStatus(): Promise<Status> {
     const response = await axios(this.apiUrl('/api/app/status'));
-    return response.data.mode === 'CONNECTED';
+    return response.data;
+  }
+
+  async setToMode(mode: Mode) {
+    const status = await this.getStatus();
+    if (status.mode === mode) {
+      return;
+    }
+
+    switch (mode) {
+      case 'OFF':
+        await axios(this.apiUrl('/api/interface/btn_short_manual'), {method: 'PUT'});
+        break;
+      case 'CONNECTED':
+        if (status.mode === 'OFF') {
+          await axios(this.apiUrl('/api/interface/btn_short_manual'), {method: 'PUT'});
+        }
+        await axios(this.apiUrl('/api/interface/btn_short_connect'), {method: 'PUT'});
+        break;
+      case 'STATIC':
+        if (status.mode === 'OFF') {
+          await axios(this.apiUrl('/api/interface/btn_short_manual'), {method: 'PUT'});
+        } else if (status.mode === 'CONNECTED') {
+          await axios(this.apiUrl('/api/interface/btn_short_connect'), {method: 'PUT'});
+        }
+        break;
+      default:
+        this.log.error('Unknown mode: ' + mode);
+
+    }
+    await this.pushUpdate();
+  }
+
+  async handleModeGet(): Promise<CharacteristicValue> {
+    const status = await this.getStatus();
+    return status.mode === 'CONNECTED';
   }
 
   async handleModeSet(value: CharacteristicValue) {
-    const response = await axios(this.apiUrl('/api/app/status'));
-    const mode = response.data.mode;
-    try {
-
-      if (value) {
-        switch (mode) {
-          case 'CONNECTED':
-            return;
-          case 'OFF':
-            await axios(
-              this.apiUrl('/api/interface/btn_short_manual'),
-              {
-                method: 'PUT',
-              });
-            // we actually want to fall through here
-            // eslint-disable-next-line no-fallthrough
-          case 'SCENARIO':
-          case 'STATIC' :
-            await axios(this.apiUrl('/api/interface/btn_short_connect'), {
-              method: 'PUT',
-            });
-            break;
-          default:
-            this.log.error('Unknown mode: ' + mode);
-            break;
-        }
-      } else {
-        if (mode === 'OFF') {
-          return;
-        }
-        await axios(
-          this.apiUrl('/api/interface/btn_short_manual'),
-          {
-            method: 'PUT',
-          });
-      }
-    } catch (e) {
-      this.log.error('got an error', e);
-    }
-  }
-
-  /**
-     * Loads a packed version of the estimation map
-     * This was created using srcipt/create-estimation-map.ts
-     * Basically this is a huge rainbow table and we just search for the best match
-     */
-  async loadResultPacked(): Promise<Array<EstimationItem>> {
-    const packed: Array<Array<number>> = JSON.parse(fs.readFileSync('data-packed.json', 'utf-8'));
-    return packed.map(it => ({
-      temperature: {
-        brightness: it[0],
-        kelvin: it[1],
-      },
-      power: {
-        warm: it[2],
-        cold: it[3],
-      },
-    }));
+    this.log.debug('handleModeSet', value);
+    await this.setToMode(value ? 'CONNECTED' : 'OFF');
   }
 
   /**
@@ -171,13 +172,15 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
   async getLampPower(): Promise<LampPowers> {
     let response = (await axios(this.apiUrl('/api/app/pwm_duty_get'))).data;
     let settled = false;
+    this.log.debug('Getting lamp status');
     while (!settled) {
-      await sleep(10);
+      this.log.debug('Waiting for lamp to settle');
+      await sleep(100);
       const current = (await axios(this.apiUrl('/api/app/pwm_duty_get'))).data;
       settled = current.cold === response.cold && current.warm === response.warm;
       response = current;
-
     }
+    this.log.debug('settled on ' + JSON.stringify(response));
     return response;
   }
 
@@ -210,6 +213,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
 
   async handleBrightnesSet(value: CharacteristicValue) {
     try {
+      await this.setToMode('STATIC');
       const temperature = await this.getEstimatedTemperature();
       await axios(this.apiUrl('/api/app/light_color'), {
         method: 'POST',
@@ -218,6 +222,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
           brightness: value,
         },
       });
+      void this.pushUpdate();
     } catch (e) {
       this.log.error('got an error', e);
     }
@@ -231,6 +236,7 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
 
   async handleColorTemperatureSet(value: CharacteristicValue) {
     try {
+      await this.setToMode('STATIC');
       const temperature = await this.getEstimatedTemperature();
       // We need to clamp the value because the lamp does not support all values
       const kelvin = Math.floor(1_000_000 / (value as number));
@@ -242,44 +248,21 @@ export class InioAccessoryPlugin implements AccessoryPlugin {
           kelvin: clamped,
         },
       });
+      void this.pushUpdate();
     } catch (e) {
       this.log.error('got an error', e);
     }
   }
 
   async handleOnGet(): Promise<CharacteristicValue> {
-    const response = await axios(this.apiUrl('/api/app/status'));
-    return response.data.mode !== 'OFF';
+    const status = await this.getStatus();
+    return status.mode !== 'OFF';
   }
 
   async handleOnSet(value: CharacteristicValue) {
     try {
-      const status = await this.handleOnGet();
-      if (status === value) {
-        return;
-      }
-
-      if (value) {
-        if (status) {
-          return;
-        }
-        await axios(
-          this.apiUrl('/api/interface/btn_short_manual'),
-          {
-            method: 'PUT',
-          });
-
-        await axios(
-          this.apiUrl('/api/interface/btn_short_connect'), {
-            method: 'PUT',
-          });
-      } else {
-        await axios(
-          this.apiUrl('/api/interface/btn_short_manual'),
-          {
-            method: 'PUT',
-          });
-      }
+      await this.setToMode(value ? 'STATIC' : 'OFF');
+      void this.pushUpdate();
     } catch (e) {
       this.log.error('got an error', e);
     }
