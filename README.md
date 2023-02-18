@@ -35,11 +35,9 @@ Example for one accesory
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 <table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/reckter"><img src="https://avatars.githubusercontent.com/u/1771450?v=4?s=100" width="100px;" alt="Hannes Güdelhöfer"/><br /><sub><b>Hannes Güdelhöfer</b></sub></a><br /><a href="https://github.com/reckter/homebridge-inio/commits?author=reckter" title="Code">💻</a> <a href="#ideas-reckter" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-reckter" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-reckter" title="Maintenance">🚧</a></td>
-    </tr>
-  </tbody>
+  <tr>
+    <td align="center"><a href="https://github.com/reckter"><img src="https://avatars.githubusercontent.com/u/1771450?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Hannes Güdelhöfer</b></sub></a><br /><a href="https://github.com/reckter/homebridge-inio/commits?author=reckter" title="Code">💻</a> <a href="#ideas-reckter" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-reckter" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#maintenance-reckter" title="Maintenance">🚧</a> <a href="https://github.com/reckter/homebridge-inio/commits?author=reckter" title="Documentation">📖</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
