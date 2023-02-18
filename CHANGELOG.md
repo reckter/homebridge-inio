@@ -1,3 +1,15 @@
+# v0.7.1 (Sat Feb 18 2023)
+
+#### 🐛 Bug Fix
+
+- Set the mode to static on brighntess / temperature changes [#6](https://github.com/reckter/homebridge-inio/pull/6) ([@reckter](https://github.com/reckter))
+
+#### Authors: 1
+
+- Hannes Güdelhöfer ([@reckter](https://github.com/reckter))
+
+---
+
 # v0.7.0 (Thu Feb 16 2023)
 
 #### 🚀 Enhancement
